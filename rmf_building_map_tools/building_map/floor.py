@@ -141,7 +141,7 @@ class Floor:
                 # to be clipped to lie within the original floor polygon
                 # for example, if a long triangle crossed a concave region
                 # and you end up with >=1 polygons and >=1 points or edges.
-                for item in geom:
+                for item in geom.geoms:
                     if item.geom_type == 'Polygon':
                         self.triangulate_polygon(item, triangles)
 
@@ -302,8 +302,8 @@ class Floor:
 
         pbr_textures = get_pbr_textures(self.params)
         texture_filename = add_pbr_material(
-                visual_ele, model_name, f'floor_{floor_cnt}', texture_name,
-                f'{model_path}/meshes', pbr_textures)
+            visual_ele, model_name, f'floor_{floor_cnt}', texture_name,
+            f'{model_path}/meshes', pbr_textures)
 
         mtl_path = f'{model_path}/meshes/floor_{floor_cnt}.mtl'
         with open(mtl_path, 'w') as f:
@@ -454,9 +454,9 @@ class Floor:
 
         ceiling_pbr_textures = get_ceiling_pbr_textures(self.params)
         texture_filename = add_pbr_material(
-                visual_ele, model_name,
-                f'ceiling_{ceiling_cnt}', ceiling_texture,
-                f'{model_path}/meshes', ceiling_pbr_textures)
+            visual_ele, model_name,
+            f'ceiling_{ceiling_cnt}', ceiling_texture,
+            f'{model_path}/meshes', ceiling_pbr_textures)
 
         mtl_path = f'{model_path}/meshes/ceiling_{ceiling_cnt}.mtl'
         with open(mtl_path, 'w') as f:
