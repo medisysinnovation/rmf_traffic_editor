@@ -96,11 +96,14 @@ bool Building::load(const string& _filename)
 
   if (y["reference_level_name"])
     reference_level_name = y["reference_level_name"].as<string>();
+  else
+    reference_level_name = "";
 
   // crowd_sim_impl is initialized when creating crowd_sim_table in editor.cpp
   // just in case the pointer is not initialized
   if (crowd_sim_impl == nullptr)
     crowd_sim_impl = std::make_shared<crowd_sim::CrowdSimImplementation>();
+
   if (y["crowd_sim"] && y["crowd_sim"].IsMap())
   {
     if (!crowd_sim_impl->from_yaml(y["crowd_sim"]))
