@@ -324,6 +324,8 @@ class BuildingMapServer(Node):
         gn.y = wp_y
         gn.name = str(wp_name)
 
+        return gn
+
 
 def main():
     if len(sys.argv) > 1:
