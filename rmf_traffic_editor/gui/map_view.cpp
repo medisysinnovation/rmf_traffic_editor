@@ -47,7 +47,24 @@ MapView::MapView(QWidget* parent, const Building& building_)
 void MapView::wheelEvent(QWheelEvent* e)
 {
   e->accept();
+  Qt::KeyboardModifiers mods = e->modifiers();
 
+  if (mods & Qt::ControlModifier)
+  {
+    zoom(e);
+  }
+  else if (mods & Qt::ShiftModifier)
+  {
+    horizontal_scroll(e);
+  }
+  else
+  {
+    vertical_scroll(e);
+  }
+}
+
+void MapView::zoom(QWheelEvent* e)
+{
   // calculate the map position before we scale things
   const QPointF p_start = mapToScene(e->pos());
 
@@ -126,6 +143,26 @@ void MapView::wheelEvent(QWheelEvent* e)
     }
     draw_tiles();
   }
+
+}
+
+void MapView::horizontal_scroll(QWheelEvent* e)
+{
+  const int delta = e->delta();
+
+  int step =
+    (delta > 0) ? -1*(SCROLL_PIXEL_PER_NOTCH) : (SCROLL_PIXEL_PER_NOTCH);
+
+  horizontalScrollBar()->setValue(horizontalScrollBar()->value()+step);
+}
+
+void MapView::vertical_scroll(QWheelEvent* e)
+{
+  const int delta = e->delta();
+  int step =
+    (delta > 0) ? -1*(SCROLL_PIXEL_PER_NOTCH) : (SCROLL_PIXEL_PER_NOTCH);
+
+  verticalScrollBar()->setValue(verticalScrollBar()->value()+step);
 }
 
 void MapView::mousePressEvent(QMouseEvent* e)

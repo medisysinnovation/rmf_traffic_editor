@@ -104,6 +104,11 @@ private:
   QPointF last_center;
 
   void process_request_queue();
+
+  const int SCROLL_PIXEL_PER_NOTCH = 50;
+  void zoom(QWheelEvent* e);
+  void horizontal_scroll(QWheelEvent* e);
+  void vertical_scroll(QWheelEvent* e);
 };
 
 #endif
