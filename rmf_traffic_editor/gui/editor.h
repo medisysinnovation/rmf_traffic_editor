@@ -92,6 +92,14 @@ public:
   /// Attempt to restore the previous viewport scale and center point
   void restore_previous_viewport();
 
+signals:
+  void file_loaded(const QString&);
+
+protected Q_SLOTS:
+  void set_window_title(const QString&);
+private:
+  QString _windows_title;
+
 protected:
   void mousePressEvent(QMouseEvent* e);
   void mouseReleaseEvent(QMouseEvent* e);

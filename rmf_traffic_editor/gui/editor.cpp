@@ -458,10 +458,26 @@ Editor::Editor()
     this,
     &Editor::cache_size_update_timer_timeout);
   cache_size_update_timer->start(10 * 1000);
+
+  connect(
+    this, SIGNAL(file_loaded(const QString&)),
+    this, SLOT(set_window_title(const QString&))
+  );
 }
 
 Editor::~Editor()
 {
+}
+
+void Editor::set_window_title(const QString& newtitle)
+{
+  printf("set_window_title: %s\n", newtitle.toStdString().c_str());
+  if (newtitle == _windows_title)
+    return;
+
+  this->setWindowTitle(newtitle+"[*]");
+  _windows_title = newtitle;
+  update();
 }
 
 void Editor::load_model_names()
@@ -564,6 +580,8 @@ bool Editor::load_building(const QString& filename)
   const QString absolute_path = QFileInfo(filename).absoluteFilePath();
   if (!building.load(absolute_path.toStdString()))
     return false;
+
+  emit file_loaded(absolute_path);
 
   level_idx = 0;
 
