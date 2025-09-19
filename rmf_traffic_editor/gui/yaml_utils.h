@@ -25,6 +25,9 @@ namespace yaml_utils {
 // Recursive function to write YAML ordered maps. Credit: Dave Hershberger
 void write_node(const YAML::Node& node, YAML::Emitter& emitter);
 
+void remove_trailing_zeros_after_dot(std::string& str);
+
+
 }
 
 #endif

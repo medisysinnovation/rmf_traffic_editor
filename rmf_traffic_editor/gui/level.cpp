@@ -209,7 +209,36 @@ bool Level::load_drawing()
   return true;
 }
 
-YAML::Node Level::to_yaml(const CoordinateSystem& coordinate_system) const
+std::string Level::auto_generate_wp_names(
+  const std::vector<std::string>& existnames,
+  const std::string& levelname, int& i) const
+{
+  bool findaname = false;
+  while (!findaname && i < 1000)
+  {
+    std::string test = levelname;
+    if (i >= 1000)
+      return "";
+    else if (i < 10)
+      test = test +"___"+ std::to_string(i);
+    else if (i < 100)
+      test = test +"__" +std::to_string(i);
+    else
+      test = test +"_" +std::to_string(i);
+    if (std::find(existnames.begin(), existnames.end(),
+      test) == existnames.end())
+    {
+      i++;
+      return test;
+    }
+    else
+      i++;
+  }
+  return "";
+}
+
+YAML::Node Level::to_yaml(const CoordinateSystem& coordinate_system,
+  quint8 options)
 {
   YAML::Node y;
   if (!drawing_filename.empty())
@@ -224,6 +253,53 @@ YAML::Node Level::to_yaml(const CoordinateSystem& coordinate_system) const
     y["y_meters"] = y_meters;
   }
   y["elevation"] = elevation;
+
+  //Collect vertices which are connected to lanes
+  QList<int> lanevertex;
+  for (const auto& edge : edges)
+  {
+    if (edge.type != Edge::LANE)
+      continue;
+    if (!lanevertex.contains(edge.start_idx))
+      lanevertex.append(edge.start_idx);
+    if (!lanevertex.contains(edge.end_idx))
+      lanevertex.append(edge.end_idx);
+  }
+
+  int temindex;
+  std::vector<std::string> existnames;
+  std::string levelname = this->name;
+  for (const auto& v : vertices)
+  {
+    if (v.name.size() == 0)
+      continue;
+    if (std::find(existnames.begin(), existnames.end(),
+      v.name) != existnames.end())
+    {
+      printf(" Duplicated names find ! - %s\n", v.name.c_str());
+    }
+    else
+      existnames.push_back(v.name);
+  }
+  int ii = 0;
+  for (int ix = 0; ix < vertices.size(); ix++)
+  {
+    if (!lanevertex.contains(ix))
+      continue;
+    auto& v = vertices[ix];
+
+    if (v.name.size() > 0)
+      continue;
+    std::string ssv = auto_generate_wp_names(existnames, levelname, ii);
+    if (ssv.size() < 2)
+      printf("Generate new name: Failed !!!!!!!!!!!!!!!!!! \n");
+    if (ssv.size() < 2)
+      break;
+    existnames.push_back(ssv);
+    v.name = ssv;
+    // qDebug()<<"     Generated wp name: "<< ix << " : "<< QString::fromStdString(ssv);
+  }
+
 
   for (const auto& v : vertices)
     y["vertices"].push_back(v.to_yaml(coordinate_system));
@@ -611,8 +687,8 @@ void Level::calculate_scale(const CoordinateSystem& coordinate_system)
   if (scale_count > 0)
   {
     drawing_meters_per_pixel = scale_sum / static_cast<double>(scale_count);
-    printf("used %d measurements to estimate meters/pixel as %.5f\n",
-      scale_count, drawing_meters_per_pixel);
+    //printf("used %d measurements to estimate meters/pixel as %.5f\n",
+    //  scale_count, drawing_meters_per_pixel);
   }
   else
     drawing_meters_per_pixel = coordinate_system.default_scale();
@@ -1107,7 +1183,7 @@ void Level::draw(
   const vector<Graph>& graphs,
   const CoordinateSystem& coordinate_system)
 {
-  printf("Level::draw()\n");
+  //printf("Level::draw()\n");
   vertex_radius = 0.1;
 
   if (!coordinate_system.is_global())
@@ -1850,7 +1926,7 @@ void Level::mouse_select_press(
   const RenderingOptions& rendering_options,
   const Qt::KeyboardModifiers& modifiers)
 {
-  printf("Level::mouse_select_press(%.3f, %.3f)\n", x, y);
+  //printf("Level::mouse_select_press(%.3f, %.3f)\n", x, y);
 
   if (!(modifiers & Qt::ShiftModifier))
     clear_selection();

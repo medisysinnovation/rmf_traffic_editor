@@ -73,3 +73,28 @@ void yaml_utils::write_node(
       break;
   }
 }
+void yaml_utils::remove_trailing_zeros_after_dot(std::string& str)
+{
+  size_t dotPos = str.find('.');
+  if (dotPos == std::string::npos)
+  {
+    // No decimal point found; nothing to do
+    return;
+  }
+  size_t i = str.size();
+
+  // Remove trailing zeros after the decimal point
+  while (i > dotPos + 1 && str[i - 1] == '0')
+  {
+    --i;
+  }
+
+  // Remove the decimal point if it's at the end
+  if (i == dotPos + 1)
+  {
+    --i;
+  }
+
+  // Resize the string to remove unwanted characters
+  str.resize(i);
+}

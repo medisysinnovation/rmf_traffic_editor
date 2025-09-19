@@ -43,6 +43,7 @@ void LayerTable::update(
   Level& level = building.levels[level_idx];
 
   blockSignals(true);  // otherwise we get tons of callbacks
+  setRowCount(0);  // clear out all rows first
   setRowCount(2 + level.layers.size());
 
   set_row(

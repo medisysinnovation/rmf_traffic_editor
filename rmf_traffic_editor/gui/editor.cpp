@@ -163,6 +163,20 @@ Editor::Editor()
         t.scale(scale, y_flip * scale);
         map_view->setTransform(t);
         map_view->centerOn(p_transformed);
+
+        // --- NEW: refresh layer table for new level ---
+        layer_idx = 0; // or keep previous selection if you want
+        layer_table->update(building, level_idx, layer_idx);
+
+        if (!building.levels[level_idx].layers.empty())
+        {
+          populate_property_editor(
+            building.levels[level_idx].layers[layer_idx]);
+        }
+        else
+        {
+          clear_property_editor();
+        }
       }
     });
 
@@ -445,6 +459,8 @@ Editor::Editor()
   setGeometry(left, top, width, height);
   map_view->adjustSize();
 
+  load_edit_in_meter();
+
   // default tool is the "select" tool
   tool_button_group->button(TOOL_SELECT)->click();
 
@@ -543,6 +559,23 @@ void Editor::load_model_names()
     editor_models.emplace_back(
       it->as<std::string>(),
       model_meters_per_pixel);
+}
+
+void Editor::load_edit_in_meter()
+{
+  QSettings settings;
+  try
+  {
+    const bool edit_in_meter =
+      settings.contains(preferences_keys::edit_in_meter) ?
+      settings.value(preferences_keys::edit_in_meter).toBool() : false;
+    set_edit_in_meter(edit_in_meter);
+  }
+  catch (const std::exception& e)
+  {
+    qWarning("failed to load edit_in_meter", e.what());
+  }
+
 }
 
 QToolButton* Editor::create_tool_button(
@@ -739,7 +772,8 @@ void Editor::building_new()
   if (new_building_dialog_ui.geolocated_radio->isChecked())
     building.coordinate_system.value = CoordinateSystem::Value::WGS84;
   else
-    building.coordinate_system.value = CoordinateSystem::Value::ReferenceImage;
+    building.coordinate_system.value =
+      CoordinateSystem::Value::ReferenceImage;
 
   building.set_filename(file_info.absoluteFilePath().toStdString());
   QString dir_path = file_info.dir().path();
@@ -842,7 +876,11 @@ void Editor::edit_preferences()
   PreferencesDialog preferences_dialog(this);
 
   if (preferences_dialog.exec() == QDialog::Accepted)
+  {
     load_model_names();
+    load_edit_in_meter();
+    clear_property_editor();
+  }
 }
 
 void Editor::edit_building_properties()
@@ -1157,7 +1195,8 @@ void Editor::tool_toggled(int id, bool checked)
           mouse_motion_editor_model = &em;
           const QPixmap pixmap(mouse_motion_editor_model->get_pixmap());
           mouse_motion_model = scene->addPixmap(pixmap);
-          mouse_motion_model->setOffset(-pixmap.width()/2, -pixmap.height()/2);
+          mouse_motion_model->setOffset(-pixmap.width()/2,
+            -pixmap.height()/2);
           mouse_motion_model->setScale(
             mouse_motion_editor_model->meters_per_pixel /
             building.levels[level_idx].drawing_meters_per_pixel);
@@ -1470,34 +1509,76 @@ void Editor::populate_property_editor(const Vertex& vertex, const int index)
   property_editor_set_row(0, "index", index);
   if (!building.coordinate_system.is_global())
   {
-    property_editor_set_row(1, "x (pixels)", vertex.x, 3, true);
-    property_editor_set_row(2, "y (pixels)", vertex.y, 3, true);
-
-    const size_t ref_level_idx =
-      static_cast<size_t>(building.get_reference_level_idx());
-
-    if (ref_level_idx < building.levels.size())
+    if (!get_edit_in_meter())
     {
-      QPointF p_ref_level;
-      building.transform_between_levels(
-        level_idx,
-        QPoint(vertex.x, vertex.y),
-        ref_level_idx,
-        p_ref_level);
 
-      const double y_flip = building.coordinate_system.is_y_flipped() ? -1 : 1;
-      const double scale =
-        building.levels[ref_level_idx].drawing_meters_per_pixel;
-      const QPointF p_meters(
-        p_ref_level.x() * scale,
-        p_ref_level.y() * scale * y_flip);
-      property_editor_set_row(3, "x (m)", p_meters.x());
-      property_editor_set_row(4, "y (m)", p_meters.y());
+      property_editor_set_row(1, "x (pixels)", vertex.x, 3, true);
+      property_editor_set_row(2, "y (pixels)", vertex.y, 3, true);
+
+      const size_t ref_level_idx =
+        static_cast<size_t>(building.get_reference_level_idx());
+
+      if (ref_level_idx < building.levels.size())
+      {
+        QPointF p_ref_level;
+        building.transform_between_levels(
+          level_idx,
+          QPointF(vertex.x, vertex.y),
+          ref_level_idx,
+          p_ref_level);
+
+        const double y_flip =
+          building.coordinate_system.is_y_flipped() ? -1 : 1;
+        const double scale =
+          building.levels[ref_level_idx].drawing_meters_per_pixel;
+        const QPointF p_meters(
+          p_ref_level.x() * scale,
+          p_ref_level.y() * scale * y_flip);
+        property_editor_set_row(3, "x (m)", p_meters.x());
+        property_editor_set_row(4, "y (m)", p_meters.y());
+      }
+      else
+      {
+        property_editor_set_row(3, "x (m)", "");
+        property_editor_set_row(4, "y (m)", "");
+      }
+
     }
     else
     {
-      property_editor_set_row(3, "x (m)", "");
-      property_editor_set_row(4, "y (m)", "");
+//edit in meters
+
+      property_editor_set_row(1, "x (pixels)", vertex.x);
+      property_editor_set_row(2, "y (pixels)", vertex.y);
+
+      const size_t ref_level_idx =
+        static_cast<size_t>(building.get_reference_level_idx());
+
+      if (ref_level_idx < building.levels.size())
+      {
+        QPointF p_ref_level;
+        building.transform_between_levels(
+          level_idx,
+          QPointF(vertex.x, vertex.y),
+          ref_level_idx,
+          p_ref_level);
+
+        const double y_flip =
+          building.coordinate_system.is_y_flipped() ? -1 : 1;
+        const double scale =
+          building.levels[ref_level_idx].drawing_meters_per_pixel;
+        const QPointF p_meters(
+          p_ref_level.x() * scale,
+          p_ref_level.y() * scale * y_flip);
+        property_editor_set_row(3, "x (m)", p_meters.x(), 3, true);
+        property_editor_set_row(4, "y (m)", p_meters.y(), 3, true);
+      }
+      else
+      {
+        property_editor_set_row(3, "x (m)", "");
+        property_editor_set_row(4, "y (m)", "");
+      }
+
     }
   }
   else
@@ -1603,7 +1684,7 @@ void Editor::populate_property_editor(const Model& model)
 
 void Editor::populate_property_editor(const Polygon& polygon)
 {
-  printf("populate_property_editor(polygon)\n");
+  //printf("populate_property_editor(polygon)\n");
   property_editor->blockSignals(true);  // otherwise we get tons of callbacks
 
   property_editor->setRowCount(polygon.params.size());
@@ -1655,8 +1736,101 @@ void Editor::property_editor_cell_changed(int row, int column)
       v.x = stof(value);
     else if (name == "y (pixels)")
       v.y = stof(value);
+    else if (name == "x (m)")
+    {
+      const size_t ref_level_idx =
+        static_cast<size_t>(building.get_reference_level_idx());
+
+      if (ref_level_idx < building.levels.size())
+      {
+        QPointF p_ref_level;
+        building.transform_between_levels(
+          level_idx,
+          QPoint(v.x, v.y),
+          ref_level_idx,
+          p_ref_level);
+        const double y_flip =
+          building.coordinate_system.is_y_flipped() ? -1 : 1;
+        const double scale =
+          building.levels[ref_level_idx].drawing_meters_per_pixel;
+        QPointF p_meters(
+          p_ref_level.x() * scale,
+          p_ref_level.y() * scale * y_flip);
+
+        // printf(
+        //   " traffic_editor: set New X - step 1 : (%5.4f,%5.4f) in pixel to (%5.4f, %6.4f) in meter\n", v.x, v.y,
+        //   p_meters.x(), p_meters.y());
+        // printf(" traffic_editor: set New X - new value: ( %5.4f ) in meter\n", stof(
+        //     value));
+
+        p_meters.setX(stof(value)); ///Here we set the new value;
+        double xx = p_meters.x() / scale;
+        double x1 = 0.0;
+        if (level_idx < 0 ||
+          level_idx >= static_cast<int>(building.levels.size()) ||
+          ref_level_idx < 0 ||
+          ref_level_idx >= static_cast<int>(building.levels.size()))
+        {
+          x1 = xx;
+        }
+        else
+        {
+          const Building::Transform t = building.get_transform(level_idx,
+              ref_level_idx);
+          x1 = (xx - t.dx) / t.scale;
+        }
+        v.x = x1;
+        //printf(" traffic_editor: set New X - %5.4f\n", x1);
+      }
+    }
+    else if (name == "y (m)")
+    {
+      const size_t ref_level_idx =
+        static_cast<size_t>(building.get_reference_level_idx());
+
+      if (ref_level_idx < building.levels.size())
+      {
+        QPointF p_ref_level;
+        building.transform_between_levels(
+          level_idx,
+          QPoint(v.x, v.y),
+          ref_level_idx,
+          p_ref_level);
+        const double y_flip =
+          building.coordinate_system.is_y_flipped() ? -1 : 1;
+        const double scale =
+          building.levels[ref_level_idx].drawing_meters_per_pixel;
+        QPointF p_meters(
+          p_ref_level.x() * scale,
+          p_ref_level.y() * scale * y_flip);
+        // printf(
+        //   " traffic_editor: set New Y - step 1 : (%5.4f,%5.4f) in pixel to (%5.4f, %6.4f) in meter\n", v.x, v.y,
+        //   p_meters.x(), p_meters.y());
+        // printf(" traffic_editor: set New Y - new value: ( %5.4f ) in meter\n", stof(
+        //     value));
+        p_meters.setY(stof(value));
+        double yy = p_meters.y() / (scale * y_flip);
+        double y1 = 0.0;
+        if (level_idx < 0 ||
+          level_idx >= static_cast<int>(building.levels.size()) ||
+          ref_level_idx < 0 ||
+          ref_level_idx >= static_cast<int>(building.levels.size()))
+        {
+          y1 = yy;
+        }
+        else
+        {
+          const Building::Transform t = building.get_transform(level_idx,
+              ref_level_idx);
+          y1 = (yy - t.dy) / t.scale;
+        }
+        v.y = y1;
+        //printf(" traffic_editor: set New Y - %5.4f\n", y1);
+      }
+    }
     else
       v.set_param(name, value);
+
     create_scene();
     setWindowModified(true);
     return;  // stop after finding the first one
@@ -1748,7 +1922,8 @@ void Editor::draw_mouse_motion_line_item(
   const auto& start =
     building.levels[level_idx].vertices[clicked_idx];
   if (!mouse_motion_line)
-    mouse_motion_line = scene->addLine(start.x, start.y, mouse_x, mouse_y, pen);
+    mouse_motion_line =
+      scene->addLine(start.x, start.y, mouse_x, mouse_y, pen);
   else
     mouse_motion_line->setLine(start.x, start.y, mouse_x, mouse_y);
 }
@@ -1957,7 +2132,7 @@ void Editor::mouse_move(
 
     if (mouse_model_idx >= 0) //Add mouse move model
     {
-      if (latest_move_model->has_moved)
+      if (latest_move_model&&latest_move_model->has_moved)
       {
         undo_stack.push(latest_move_model);
       }
@@ -2849,6 +3024,17 @@ Layer* Editor::active_layer()
 
 void Editor::cache_size_update_timer_timeout()
 {
-  printf("cache_size_update_timer_timeout()\n");
+  //printf("cache_size_update_timer_timeout()\n");
   map_view->update_cache_size_label(cache_size_label);
+}
+
+void Editor::set_edit_in_meter(const bool value)
+{
+  printf("Set edit in meter [%d]", value);
+  edit_in_meter = value;
+}
+
+bool Editor::get_edit_in_meter()
+{
+  return edit_in_meter;
 }

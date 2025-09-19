@@ -34,6 +34,7 @@ private:
   QPushButton* thumbnail_path_button;
   QCheckBox* open_previous_building_checkbox;
   QPushButton* ok_button, * cancel_button;
+  QCheckBox* edit_in_meter_checkbox;
 
 private slots:
   void thumbnail_path_button_clicked();

@@ -187,7 +187,7 @@ bool Building::save()
     y["reference_level_name"] = reference_level_name;
 
   y["levels"] = YAML::Node(YAML::NodeType::Map);
-  for (const auto& level : levels)
+  for (auto& level : levels)
     y["levels"][level.name] = level.to_yaml(coordinate_system);
 
   y["lifts"] = YAML::Node(YAML::NodeType::Map);
@@ -558,12 +558,12 @@ Building::Transform Building::compute_transform(
   t.dx = trans_x;
   t.dy = trans_y;
 
-  printf("transform %d->%d: scale = %.5f translation = (%.2f, %.2f)\n",
-    from_level_idx,
-    to_level_idx,
-    t.scale,
-    t.dx,
-    t.dy);
+  //printf("transform %d->%d: scale = %.5f translation = (%.2f, %.2f)\n",
+  //from_level_idx,
+  //to_level_idx,
+  //t.scale,
+  //t.dx,
+  //t.dy);
 
   return t;
 }

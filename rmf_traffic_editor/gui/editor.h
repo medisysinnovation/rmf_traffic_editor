@@ -374,6 +374,12 @@ private:
   QLabel* cache_size_label = nullptr;
   QTimer* cache_size_update_timer = nullptr;
   void cache_size_update_timer_timeout();
+
+private:
+  bool edit_in_meter = false;
+  bool get_edit_in_meter();
+  void set_edit_in_meter(const bool value);
+  void load_edit_in_meter();
 };
 
 #endif

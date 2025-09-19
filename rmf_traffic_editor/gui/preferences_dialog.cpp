@@ -56,8 +56,14 @@ PreferencesDialog::PreferencesDialog(QWidget* parent)
   open_previous_building_checkbox->setChecked(
     settings.value(preferences_keys::open_previous_building).toBool());
 
+  edit_in_meter_checkbox = new QCheckBox(
+    "Edit coordinates in meter", this);
+  edit_in_meter_checkbox->setChecked(
+    settings.value(preferences_keys::edit_in_meter).toBool());
+
   QVBoxLayout* vbox_layout = new QVBoxLayout;
   vbox_layout->addWidget(open_previous_building_checkbox);
+  vbox_layout->addWidget(edit_in_meter_checkbox);
   vbox_layout->addLayout(thumbnail_path_layout);
   // todo: some sort of separator (?)
   vbox_layout->addLayout(bottom_buttons_layout);
@@ -113,6 +119,10 @@ void PreferencesDialog::ok_button_clicked()
   settings.setValue(
     preferences_keys::open_previous_building,
     open_previous_building_checkbox->isChecked());
+
+  settings.setValue(
+    preferences_keys::edit_in_meter,
+    edit_in_meter_checkbox->isChecked());
 
   accept();
 }

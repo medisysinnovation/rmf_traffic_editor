@@ -87,7 +87,12 @@ public:
     const std::string& name,
     const YAML::Node& data,
     const CoordinateSystem& coordinate_system);
-  YAML::Node to_yaml(const CoordinateSystem& coordinate_system) const;
+  YAML::Node to_yaml(const CoordinateSystem& coordinate_system,
+    quint8 options = 0);
+
+  std::string auto_generate_wp_names(const std::vector<std::string>& existnames,
+    const std::string& levelname,
+    int& i) const;
 
   const Feature* find_feature(const QUuid& id) const;
   const Feature* find_feature(const double x, const double y) const;

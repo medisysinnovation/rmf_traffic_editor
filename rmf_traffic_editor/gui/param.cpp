@@ -98,9 +98,19 @@ YAML::Node Param::to_yaml() const
 void Param::set(const std::string& value)
 {
   if (type == INT)
-    value_int = stoi(value);
+  {
+    if(value.size()>0)
+      value_int = stoi(value);
+    else
+      value_int = 0;
+  }
   else if (type == DOUBLE)
-    value_double = stod(value);
+  {
+    if(value.size()>0) 
+      value_double = stod(value);
+    else 
+      value_double = 0;
+  }
   else if (type == STRING)
     value_string = value;
   else if (type == BOOL)

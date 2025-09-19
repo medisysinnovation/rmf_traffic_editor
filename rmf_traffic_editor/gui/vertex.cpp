@@ -16,12 +16,15 @@
 */
 
 #include <cmath>
+#include <iomanip>
 
 #include <QGraphicsScene>
 #include <QGraphicsSimpleTextItem>
 #include <QIcon>
 
 #include "vertex.h"
+#include "yaml_utils.h"
+
 using std::string;
 using std::vector;
 using std::pair;
@@ -105,10 +108,17 @@ YAML::Node Vertex::to_yaml(const CoordinateSystem& coordinate_system) const
 
   if (!coordinate_system.is_global())
   {
-    // in either image or cartesian-meters coordinate spaces, we're
-    // fine with rounding to 3 decimal places
-    vertex_node.push_back(std::round(x * 1000.0) / 1000.0);
-    vertex_node.push_back(std::round(y * 1000.0) / 1000.0);
+
+    std::ostringstream ossx; ossx << std::fixed << std::setprecision(4) << x;
+    std::string vx = ossx.str();
+    yaml_utils::remove_trailing_zeros_after_dot(vx);
+    vertex_node.push_back(vx);
+
+    std::ostringstream ossy; ossy << std::fixed << std::setprecision(4) << y;
+    std::string vy = ossy.str();
+    yaml_utils::remove_trailing_zeros_after_dot(vy);
+    vertex_node.push_back(vy);
+
   }
   else
   {
